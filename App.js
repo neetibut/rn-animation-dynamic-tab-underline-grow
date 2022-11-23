@@ -1,136 +1,180 @@
 import { StatusBar } from "expo-status-bar"
 import {
+  findNodeHandle,
   StyleSheet,
   Text,
   View,
   Image,
   Animated,
   Dimensions,
+  TouchableOpacity,
 } from "react-native"
-import React from "react"
+import React, { useRef, createRef } from "react"
 const { width, height } = Dimensions.get("screen")
 
 const images = {
   london:
-    "https://images.pexels.com/photos/10251917/pexels-photo-10251917.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1",
-  paris:
-    "https://images.pexels.com/photos/1125212/pexels-photo-1125212.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1",
-  newYork:
-    "https://images.pexels.com/photos/2224861/pexels-photo-2224861.png?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1",
-  losAngeles:
-    "https://images.pexels.com/photos/8783585/pexels-photo-8783585.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1",
-  tokyo:
-    "https://images.pexels.com/photos/2385210/pexels-photo-2385210.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1",
-  bangkok:
-    "https://images.pexels.com/photos/1374377/pexels-photo-1374377.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1",
+    "https://images.pexels.com/photos/10251917/pexels-photo-10251917.jpeg",
+  paris: "https://images.pexels.com/photos/1125212/pexels-photo-1125212.jpeg",
+  newyork: "https://images.pexels.com/photos/2224861/pexels-photo-2224861.png",
+  losangeles:
+    "https://images.pexels.com/photos/8783585/pexels-photo-8783585.jpeg",
+  tokyo: "https://images.pexels.com/photos/2385210/pexels-photo-2385210.jpeg",
+  bangkok: "https://images.pexels.com/photos/1374377/pexels-photo-1374377.jpeg",
 }
 
 const data = Object.keys(images).map((i) => ({
   key: i,
   title: i,
   image: images[i],
+  ref: React.createRef(),
 }))
 
-const Tab = ({ item }) => {
+const Tab = React.forwardRef(({ item, onItemPress }, ref) => {
   return (
-    <View>
-      <Text
-        style={{
-          color: "white",
-          fontSize: (84 / data.length) * 0.75,
-          fontWeight: "800",
-          textTransform: "uppercase",
-        }}
-      >
-        {item.title}
-      </Text>
-    </View>
+    <TouchableOpacity onPress={onItemPress}>
+      <View style={{ paddingHorizontal: 6, marginHorizontal: 4 }} ref={ref}>
+        <Text
+          style={{
+            textTransform: "uppercase",
+            fontSize: 76 / (data.length * 1.4),
+            fontWeight: "700",
+            color: "#fff",
+          }}
+        >
+          {item.title}
+        </Text>
+      </View>
+    </TouchableOpacity>
   )
-}
+})
 
-const Indicator = () => {
+const Indicator = React.memo(({ data, measures, scrollX }) => {
+  const inputRange = data.map((_, index) => index * width)
+  const translateX = scrollX.interpolate({
+    inputRange,
+    outputRange: data.map((_, index) => measures[index]?.x || 0),
+  })
+  const itemWidth = scrollX.interpolate({
+    inputRange,
+    outputRange: data.map((_, index) => measures[index]?.width || 0),
+  })
+
   return (
-    <View
+    <Animated.View
       style={{
+        height: 3,
+        width: itemWidth,
+        backgroundColor: "#fff",
         position: "absolute",
-        height: 4,
-        width: 100,
-        backgroundColor: "white",
-        bottom: -10,
+        bottom: -6,
+        transform: [{ translateX: translateX }],
       }}
     />
   )
-}
-const Tabs = ({ data, scrollX }) => {
+})
+
+const Tabs = ({ data, scrollX, onItemPress }) => {
+  const [measures, setMeasures] = React.useState([])
+  const tabContainerRef = React.useRef()
+
+  React.useEffect(() => {
+    // const measures = [];
+    let m = []
+    data.forEach((item, index) => {
+      item.ref.current.measureLayout(
+        findNodeHandle(tabContainerRef.current),
+        (x, y, width, height) => {
+          m.push({
+            x,
+            y,
+            width,
+            height,
+          })
+          // Last item was measured. Set the state with all measures
+          if (m.length === data.length) {
+            setMeasures(m)
+          }
+        }
+      )
+    })
+  }, [])
+
   return (
     <View
       style={{
+        justifyContent: "center",
         position: "absolute",
         top: 100,
-        width,
+        width: width,
+        left: 0,
       }}
     >
       <View
-        style={{
-          justifyContent: "space-evenly",
-          flex: 1,
-          flexDirection: "row",
-        }}
+        style={{ flexDirection: "row", justifyContent: "center" }}
+        ref={tabContainerRef}
       >
-        {data.map((item) => {
-          return <Tab key={item.key} item={item} />
+        {data.map((item, index) => {
+          return (
+            <Tab
+              key={item.key}
+              item={item}
+              ref={item.ref}
+              onItemPress={() => onItemPress(index)}
+            />
+          )
         })}
       </View>
-      <Indicator />
+      {measures.length === data.length && (
+        <Indicator measures={measures} data={data} scrollX={scrollX} />
+      )}
     </View>
   )
 }
 
 export default function App() {
   const scrollX = React.useRef(new Animated.Value(0)).current
+  const ref = React.useRef()
+  const onItemPress = React.useCallback((itemIndex) => {
+    ref?.current?.scrollToOffset({
+      offset: itemIndex * width,
+    })
+  })
   return (
-    <View style={styles.container}>
+    <View style={{ flex: 1, justifyContent: "center" }}>
       <StatusBar hidden />
       <Animated.FlatList
+        ref={ref}
+        bounces={false}
         data={data}
-        keyExtractor={(item) => item.key}
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        pagingEnabled
+        scrollEventThrottle={32}
         onScroll={Animated.event(
           [{ nativeEvent: { contentOffset: { x: scrollX } } }],
-          { useNativeDriver: false }
+          {
+            useNativeDriver: false,
+          }
         )}
-        bounces={false}
-        renderItem={({ item }) => {
+        keyExtractor={(item) => item.key}
+        pagingEnabled
+        horizontal
+        renderItem={({ item, index }) => {
           return (
-            <View style={{ width, height }}>
+            <View>
               <Image
                 source={{ uri: item.image }}
-                style={{ flex: 1, resizeMode: "cover" }}
+                style={{ width, height, resizeMode: "cover" }}
               />
               <View
                 style={[
                   StyleSheet.absoluteFillObject,
-                  {
-                    backgroundColor: "rgba(0,0,0,0.3",
-                  },
+                  { backgroundColor: "#000", opacity: 0.5 },
                 ]}
               />
-              <Tabs scrollX={scrollX} data={data} />
             </View>
           )
         }}
       />
+      <Tabs data={data} scrollX={scrollX} onItemPress={onItemPress} />
     </View>
   )
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#fff",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-})
