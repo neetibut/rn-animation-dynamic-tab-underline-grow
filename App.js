@@ -9,18 +9,22 @@ import {
   Dimensions,
   TouchableOpacity,
 } from "react-native"
-import React, { useRef, createRef } from "react"
+import * as React from "react"
 const { width, height } = Dimensions.get("screen")
 
 const images = {
   london:
-    "https://images.pexels.com/photos/10251917/pexels-photo-10251917.jpeg",
-  paris: "https://images.pexels.com/photos/1125212/pexels-photo-1125212.jpeg",
-  newyork: "https://images.pexels.com/photos/2224861/pexels-photo-2224861.png",
+    "https://images.pexels.com/photos/10251917/pexels-photo-10251917.jpeg?auto=compress&cs=tinysrgb&dpr=2&w=500",
+  paris:
+    "https://images.pexels.com/photos/1125212/pexels-photo-1125212.jpeg?auto=compress&cs=tinysrgb&dpr=2&w=500",
+  newyork:
+    "https://images.pexels.com/photos/2224861/pexels-photo-2224861.png?auto=compress&cs=tinysrgb&dpr=2&w=500",
   losangeles:
-    "https://images.pexels.com/photos/8783585/pexels-photo-8783585.jpeg",
-  tokyo: "https://images.pexels.com/photos/2385210/pexels-photo-2385210.jpeg",
-  bangkok: "https://images.pexels.com/photos/1374377/pexels-photo-1374377.jpeg",
+    "https://images.pexels.com/photos/8783585/pexels-photo-8783585.jpeg?auto=compress&cs=tinysrgb&dpr=2&w=500",
+  tokyo:
+    "https://images.pexels.com/photos/2385210/pexels-photo-2385210.jpeg?auto=compress&cs=tinysrgb&dpr=2&w=500",
+  bangkok:
+    "https://images.pexels.com/photos/1374377/pexels-photo-1374377.jpeg?auto=compress&cs=tinysrgb&dpr=2&w=500",
 }
 
 const data = Object.keys(images).map((i) => ({
@@ -33,12 +37,12 @@ const data = Object.keys(images).map((i) => ({
 const Tab = React.forwardRef(({ item, onItemPress }, ref) => {
   return (
     <TouchableOpacity onPress={onItemPress}>
-      <View style={{ paddingHorizontal: 6, marginHorizontal: 4 }} ref={ref}>
+      <View style={{ paddingHorizontal: 3, marginHorizontal: 2 }} ref={ref}>
         <Text
           style={{
             textTransform: "uppercase",
-            fontSize: 76 / (data.length * 1.4),
-            fontWeight: "700",
+            fontSize: 55 / data.length,
+            fontWeight: "800",
             color: "#fff",
           }}
         >
@@ -67,7 +71,7 @@ const Indicator = React.memo(({ data, measures, scrollX }) => {
         width: itemWidth,
         backgroundColor: "#fff",
         position: "absolute",
-        bottom: -6,
+        bottom: -10,
         transform: [{ translateX: translateX }],
       }}
     />
@@ -99,7 +103,6 @@ const Tabs = ({ data, scrollX, onItemPress }) => {
       )
     })
   }, [])
-
   return (
     <View
       style={{
